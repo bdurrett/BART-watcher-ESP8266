@@ -3,7 +3,7 @@ Low power device to display relevant BART departures, ESP8266 and SSD1306 OLED d
 
 ## Overview
 I frequently commute on BART and wanted a convenient way to tell when I should start walking to 
-the train station, ideally something that is always accesible. Using a ESP8266 board and a ~1 inch
+the train station, ideally something that is always accessible. Using a ESP8266 board and a ~1 inch
 screen, I was able to see departing trains that meet my schedule.
 
 The top line shows the date / time the station information was collected, and the departing 
@@ -21,6 +21,8 @@ In the example below, these are trains leaving Embarcadero for the North Berkele
 shown), Antioch and Pittsburg/Bay Point lines require a transfer, Richmond line is direct.
 
 ![Display close-up](https://brett.durrett.net/wp-content/uploads/2022/11/BART-watcher-screen-closeup.jpeg)
+
+There is a little more contect on my blog, [BART Train Monitor with ESP8266 and SSD1306 display](https://brett.durrett.net/bart-train-monitor-with-esp8266-and-ssd1306-display/)
 
 ## Required Hardware
 * ESP8266 board, any should work, [here's some](https://www.amazon.com/gp/product/B07RNX3W9J/ref=ppx_yo_dt_b_asin_title_o02_s00?ie=UTF8&psc=1)
