@@ -24,6 +24,7 @@ int bigLineHeight = 16;
 
 /*
 String startingStation = "NBRK";
+String endingStation = "EMBR";
 String directionNeeded = "South";
 bool redLineOption = true;
 bool redLinePreferred = true;
@@ -40,6 +41,7 @@ int tooManyMinutes = 15;
 */
 
 String startingStation = "EMBR";
+String endingStation = "NBRK";
 String directionNeeded = "North";
 bool redLineOption = true;
 bool redLinePreferred = true;
@@ -97,11 +99,11 @@ void refreshStationData() {
   String bartresponse = httpGETRequest( url.c_str() );
   // Serial.println(bartresponse);
   
-  DynamicJsonDocument doc(8192);
+  DynamicJsonDocument doc(20000);
   deserializeJson(doc, bartresponse);
 
   if ( doc.isNull() ) {
-    Serial.println("Parsing input failed!");
+    Serial.println("Parsing JSON real time departures failed!");
     return;
   }
   
@@ -109,14 +111,26 @@ void refreshStationData() {
 
   display.clear();  
   display.setColor( WHITE );        
-
-  String datetime = String( doc["root"]["date"] ).substring(0,5) + " " + String( doc["root"]["time"] ).substring(0,8);
-  Serial.println(datetime);
   display.setFont(ArialMT_Plain_10);
+
+  // Show start and end stations
   display.setTextAlignment( TEXT_ALIGN_RIGHT );
-  display.drawString( 128, 0, String( startingStation + "-->" ).c_str() );
+  display.drawString( 128, 0, endingStation );
+  // annoying I can't find a character for an arrow
+  int xOff = display.getStringWidth( endingStation );
+  xOff += 3;
+  display.fillTriangle( 128-xOff, 6, 128-xOff-5, 3, 128-xOff-5, 9 );  
+  display.drawString( 128-xOff-7, 0, String( startingStation ) );
+  
+  // Show date & time of data pull
   display.setTextAlignment( TEXT_ALIGN_LEFT );
-  display.drawString( 0, 0, datetime.c_str() );
+  String datetime = String( doc["root"]["date"] ).substring(0,5) + " " + String( doc["root"]["time"] ).substring(0,5);
+  Serial.println(datetime);
+  display.drawString( 0, 0, datetime );
+
+  // Line looks fancy
+  display.drawLine( 0, 12, 128, 12 );
+    
   yPos += smallLineHeight + 2;
 
   display.setTextAlignment( TEXT_ALIGN_LEFT );
@@ -202,10 +216,10 @@ void updateDestination( JsonObject dest, int x, int y, bool large ){
       if( mins >= notEnoughMinutes && mins <= tooManyMinutes ){
         int width = display.getStringWidth( output );
         if( large ){
-          display.fillRect( x-2, y+2, width+4, 17-2);
+          display.fillRect( x-2, y+2, width+4, 17-3);
         }
         else{
-          display.fillRect( x-1, y+2, width+2, 12-2);
+          display.fillRect( x-1, y+2, width+2, 12-3);
         }
         display.setColor( BLACK );        // Draw white text
       }
@@ -220,8 +234,6 @@ void updateDestination( JsonObject dest, int x, int y, bool large ){
 
 
 String stationAbbreviation( String name ){
-  Serial.println( "Lookup station: " + name );
-
   if( name.equalsIgnoreCase( "12th St. Oakland City Center" ) ) return "12TH";
   if( name.equalsIgnoreCase( "16th St. Mission" ) ) return "16TH";
   if( name.equalsIgnoreCase( "19th St. Oakland" ) ) return "19TH";
@@ -257,6 +269,21 @@ String stationAbbreviation( String name ){
   if( name.equalsIgnoreCase( "Oakland International Airport" ) ) return "OAKL";
   if( name.equalsIgnoreCase( "Orinda" ) ) return "ORIN";
   if( name.equalsIgnoreCase( "Pittsburg/Bay Point" ) ) return "PITT";
+  if( name.equalsIgnoreCase( "Pittsburg Center" ) ) return "PCTR";
+  if( name.equalsIgnoreCase( "Pleasant Hill/Contra Costa Centre" ) ) return "PHIL";
+  if( name.equalsIgnoreCase( "Powell St." ) ) return "POWL";
+  if( name.equalsIgnoreCase( "Richmond" ) ) return "RICH";
+  if( name.equalsIgnoreCase( "Rockridge" ) ) return "ROCK";
+  if( name.equalsIgnoreCase( "San Bruno" ) ) return "SBRN";
+  if( name.equalsIgnoreCase( "San Francisco International Airport" ) ) return "SFIA";
+  if( name.equalsIgnoreCase( "San Leandro" ) ) return "SANL";
+  if( name.equalsIgnoreCase( "South Hayward" ) ) return "SHAY";
+  if( name.equalsIgnoreCase( "South San Francisco" ) ) return "SSAN";
+  if( name.equalsIgnoreCase( "Union City" ) ) return "UCTY";
+  if( name.equalsIgnoreCase( "Walnut Creek" ) ) return "WCRK";
+  if( name.equalsIgnoreCase( "Warm Springs/South Fremont" ) ) return "WARM";
+  if( name.equalsIgnoreCase( "West Dublin/Pleasanton" ) ) return "WDUB";
+  if( name.equalsIgnoreCase( "West Oakland" ) ) return "WOAK";
   
   return( "UNKN" );
 }
@@ -268,10 +295,16 @@ void parseStationNames(){
   String url = String( "http://api.bart.gov/api/stn.aspx?cmd=stns&key=" + bartApiKey + "&json=y" );
   String bartresponse = httpGETRequest( url.c_str() );
 
-  DynamicJsonDocument doc(8192);
+  DynamicJsonDocument doc(20000);
   deserializeJson(doc, bartresponse);
 
+  if ( doc.isNull() ) {
+    Serial.println("Parsing JSON list of BART stations failed!");
+    return;
+  }
+  
   int numStations = doc["root"]["stations"]["station"].size();
+
   for( int i=0; i < numStations; i++ ){
 
     Serial.print( "if( name.equalsIgnoreCase( \"" );
