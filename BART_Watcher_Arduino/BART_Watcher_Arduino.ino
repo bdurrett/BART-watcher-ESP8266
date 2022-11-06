@@ -22,7 +22,7 @@ String bartApiKey = "MW9S-E7SL-26DU-VV8V";
 int smallLineHeight = 11;
 int bigLineHeight = 16;
 
-/*
+
 String startingStation = "NBRK";
 String endingStation = "EMBR";
 String directionNeeded = "South";
@@ -38,8 +38,9 @@ bool greenLineOption = false;
 bool greenLinePreferred = false;
 int notEnoughMinutes = 7;
 int tooManyMinutes = 15;
-*/
 
+
+/*
 String startingStation = "EMBR";
 String endingStation = "NBRK";
 String directionNeeded = "North";
@@ -55,7 +56,7 @@ bool greenLineOption = false;
 bool greenLinePreferred = false;
 int notEnoughMinutes = 7;
 int tooManyMinutes = 25;
-
+*/
 
 void setup() {
   Serial.begin(115200);         // Start the Serial communication to send messages to the computer
@@ -90,11 +91,34 @@ void setup() {
 }
 
 void loop() {
-  refreshStationData();
+  if( refreshStationData() > 0 ){
+    blinkScreen( 3, 150 );
+  }
   delay( 30 * 1000 );
 }
 
-void refreshStationData() {
+
+/*
+ *  Switch between inverted and normal screen, ideally to draw attention
+ *  blinks: the nymber of normal / invert cycles
+ *  msecBetween: millis between each tansition (2 per cycle)
+ */
+void blinkScreen( int blinks, int msecBetween ) {
+
+  for( int i = 0; i < blinks; i++ ){
+    display.invertDisplay();
+    delay( msecBetween );
+    display.normalDisplay();
+    delay( msecBetween );
+  }
+}
+
+/*
+ *  Pull updated data from BART, render relevant departure infomration to screen 
+ *  returns non-zero if there is a departure on a preferred line in the ideal 
+ *  departure time 
+ */
+int refreshStationData() {
   String url = String( "http://api.bart.gov/api/etd.aspx?cmd=etd&orig=" + startingStation + "&key="  + bartApiKey + "&json=y" );
   String bartresponse = httpGETRequest( url.c_str() );
   // Serial.println(bartresponse);
@@ -104,9 +128,10 @@ void refreshStationData() {
 
   if ( doc.isNull() ) {
     Serial.println("Parsing JSON real time departures failed!");
-    return;
+    return( 0 );
   }
-  
+
+  int preferredTrains = 0;
   int yPos = 0;
 
   display.clear();  
@@ -175,7 +200,7 @@ void refreshStationData() {
 
     if( ! skip ){
       if( preferred ){
-        updateDestination( dest, 0, yPos, true );
+        preferredTrains += updateDestination( dest, 0, yPos, true );
         yPos += bigLineHeight;
       }
       else{
@@ -185,10 +210,15 @@ void refreshStationData() {
     }
   }
   display.display();      // Show updated information on screen
+  
+  return( preferredTrains );
 }
 
-
-void updateDestination( JsonObject dest, int x, int y, bool large ){
+/*
+ *  Display a single line of a destination, stations name and minutes to departure
+ *  returns: the numoer of trains that are in the ideal departure timeframe
+ */
+int updateDestination( JsonObject dest, int x, int y, bool large ){
   if( large ){
     display.setFont(ArialMT_Plain_16);
   }
@@ -198,6 +228,8 @@ void updateDestination( JsonObject dest, int x, int y, bool large ){
   
   display.drawString( x, y, String( dest["abbreviation"] ) );
   x += display.getStringWidth( String( dest["abbreviation"] ) + "  " );
+
+  int idealSchedule = 0;
 
   JsonArray estimates = dest["estimate"];
   for( int j=0; j < estimates.size(); j++ ){
@@ -213,7 +245,9 @@ void updateDestination( JsonObject dest, int x, int y, bool large ){
     else{
       int mins = int( estimates[j]["minutes"] );
       output = String( mins );
+      // See if this is an ideal / sweet spot train, not too soon to catch, not too long to wait
       if( mins >= notEnoughMinutes && mins <= tooManyMinutes ){
+        idealSchedule++;
         int width = display.getStringWidth( output );
         if( large ){
           display.fillRect( x-2, y+2, width+4, 17-3);
@@ -230,6 +264,7 @@ void updateDestination( JsonObject dest, int x, int y, bool large ){
     x += display.getStringWidth( output + "  " );
     
   }  
+  return( idealSchedule );
 }
 
 
