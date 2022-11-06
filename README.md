@@ -11,16 +11,17 @@ station. The following lines are trains that are usable for the destination stat
 preferred (direct) lines in large type, and less-preferred (transfer needed) in small type. 
 Finally, if a train is within the sweet spot where it isn't departing too soon to make it to 
 the station but you also won't be waiting at the station too long, the departure time is 
-highlighted.
+highlighted, and the screen flashes briefly when updating to get attention.
 
 * A number is minutes until departure
 * "L" means the train is currently leaving
 * "X" means the trains was cancelled (somewhat frequent these days)
 
-In the example below, these are trains leaving Embarcadero for the North Berkeley station (not
-shown), Antioch and Pittsburg/Bay Point lines require a transfer, Richmond line is direct.
+In the example below, these are trains leaving Embarcadero for the North Berkeley station, Antioch and 
+Berryessa Point lines require a transfer, Richmond line is direct. Two of the trains fit into the
+departure sweet spot. 
 
-![Display close-up](https://brett.durrett.net/wp-content/uploads/2022/11/BART-watcher-screen-closeup.jpeg)
+![Display close-up](https://brett.durrett.net/wp-content/uploads/2022/11/BART-watcher-display-layout-v2-1.png)
 
 There is a little more contect on my blog, [BART Train Monitor with ESP8266 and SSD1306 display](https://brett.durrett.net/bart-train-monitor-with-esp8266-and-ssd1306-display/)
 
@@ -28,7 +29,7 @@ There is a little more contect on my blog, [BART Train Monitor with ESP8266 and 
 * ESP8266 board, any should work, [here's some](https://www.amazon.com/gp/product/B07RNX3W9J/ref=ppx_yo_dt_b_asin_title_o02_s00?ie=UTF8&psc=1)
 * SSD1306 OLED display, other types may work, I used [this one](https://www.amazon.com/gp/product/B01IWGXUAK/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1)
 
-The completed build needs 4 wires and looks a little something like this:
+The completed build needs 4 wires and looks a little something like this (v1 screen layout shown):
 ![BART watcher full build](https://brett.durrett.net/wp-content/uploads/2022/11/BART-watcher-full-build-scaled.jpeg)
 
 ## Thank You
