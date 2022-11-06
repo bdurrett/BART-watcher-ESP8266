@@ -37,5 +37,5 @@ The completed build needs 4 wires and looks a little something like this:
 
 ## To Do
 - [ ] Configuration requires a compile, this should be user configuable, likely via web page
-- [ ] Consider adding destination station to the display to reduce errors
+- [X] Consider adding destination station to the display to reduce errors
 - [ ] 3D Print some form of a case to make it tidy on a desk
