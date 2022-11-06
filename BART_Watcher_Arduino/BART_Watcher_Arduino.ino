@@ -22,7 +22,7 @@ String bartApiKey = "MW9S-E7SL-26DU-VV8V";
 int smallLineHeight = 11;
 int bigLineHeight = 16;
 
-
+/*
 String startingStation = "NBRK";
 String endingStation = "EMBR";
 String directionNeeded = "South";
@@ -38,9 +38,9 @@ bool greenLineOption = false;
 bool greenLinePreferred = false;
 int notEnoughMinutes = 7;
 int tooManyMinutes = 15;
+*/
 
 
-/*
 String startingStation = "EMBR";
 String endingStation = "NBRK";
 String directionNeeded = "North";
@@ -56,7 +56,7 @@ bool greenLineOption = false;
 bool greenLinePreferred = false;
 int notEnoughMinutes = 7;
 int tooManyMinutes = 25;
-*/
+
 
 void setup() {
   Serial.begin(115200);         // Start the Serial communication to send messages to the computer
