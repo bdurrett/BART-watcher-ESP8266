@@ -9,10 +9,10 @@
 #include <WiFiClient.h>
 #include "SSD1306Wire.h"              // https://github.com/ThingPulse/esp8266-oled-ssd1306
 
-
-SSD1306Wire display(0x3c, SDA, SCL);  // ADDRESS, SDA, SCL
+const int buttonPin = D5;
 
 const char compile_date[] = __DATE__ " " __TIME__;
+
 
 // Currently using the shared legacy API key, https://www.bart.gov/schedules/developers/api
 // this may be revoked at any time, get your own personal key
@@ -22,24 +22,11 @@ String bartApiKey = "MW9S-E7SL-26DU-VV8V";
 int smallLineHeight = 11;
 int bigLineHeight = 16;
 
-/*
-String startingStation = "NBRK";
-String endingStation = "EMBR";
-String directionNeeded = "South";
-bool redLineOption = true;
-bool redLinePreferred = true;
-bool orangeLineOption = true;
-bool orangeLinePreferred = false;
-bool yellowLineOption = false;
-bool yellowLinePreferred = false;
-bool blueLineOption = false;
-bool blueLinePreferred = false;
-bool greenLineOption = false;
-bool greenLinePreferred = false;
-int notEnoughMinutes = 7;
-int tooManyMinutes = 15;
-*/
+// Global display instance 
+SSD1306Wire display(0x3c, SDA, SCL);  // ADDRESS, SDA, SCL
 
+// Global Wifi Manager instance
+WiFiManager wifiManager;
 
 String startingStation = "EMBR";
 String endingStation = "NBRK";
@@ -67,7 +54,6 @@ void setup() {
   Serial.println("entering setup()");
 
   Serial.println("starting Wifi manager");
-  WiFiManager wifiManager;
   String mac = WiFi.macAddress();
   mac.replace( ":", "" );
   Serial.print("Got MAC address: " );
@@ -87,16 +73,167 @@ void setup() {
   display.displayOn();
 
   // Uncomment to pull new station list for paste into code (usually one-off)
-  // parseStationNames();               
+  // parseStationNames();
+
+  pinMode(buttonPin, INPUT);
+
+  // Load initial schedule
+  refreshStationData();
+
+  if( digitalRead(buttonPin) ){
+    Serial.println("Button is pushed");
+  }
+  else{
+    Serial.println("Button is not pushed");
+  }
 }
+
+unsigned long lastButtonDown = 0;
+unsigned long lastScheduleUpdate = 0;
 
 void loop() {
-  if( refreshStationData() > 0 ){
-    blinkScreen( 3, 150 );
+  static bool isActive = true;
+  static bool inMenu = false;
+
+  if( inMenu == true ){
+    if( inMenu = menuLoop() ){
+      // still in menu mode
+    }
+    else{
+      // exiting menu mode, force refresh of schedule
+      display.clear();  
+      display.display();        
+      lastScheduleUpdate = 0;
+      blinkScreen( 7, 50 );
+    }
+    return;
   }
-  delay( 30 * 1000 );
+
+  // Check for button press
+  if( digitalRead(buttonPin) ){
+    if( lastButtonDown != 0 ){
+      // button is pressed, long enough to enter menu mode?
+      if( millis() - lastButtonDown > 3000 ){
+        Serial.println("Entering menu mode");
+        lastButtonDown = 0;
+        display.displayOn();
+        isActive = true;     
+        inMenu = true;
+        blinkScreen( 7, 50 );
+      }
+    }
+    else{
+      lastButtonDown = millis();
+    }
+  }  
+  else{
+    // short press?
+    if( ( lastButtonDown != 0 ) && ( millis() - lastButtonDown > 50 ) ){
+      // switch between active / inactive
+      if( isActive ){
+        display.displayOff();
+        isActive = false;
+      }
+      else{
+        display.displayOn();
+        isActive = true;      }
+    }
+    lastButtonDown = 0;
+  }
+
+  
+  if( isActive ){
+    // Check if time to update schedule
+    if( millis() - lastScheduleUpdate > 30 * 1000 ){
+      if( refreshStationData() > 0 ){
+        blinkScreen( 3, 150 );
+      }
+      lastScheduleUpdate = millis();
+    }
+  }
 }
 
+
+bool menuLoop() {
+  static int menuItem = 0;
+  static int drawnMenuItem = -1;
+
+  if( drawnMenuItem != menuItem ){
+    renderMenu( menuItem );
+    drawnMenuItem = menuItem; 
+  }
+
+  // Check for button press
+  if( digitalRead(buttonPin) ){
+    if( lastButtonDown != 0 ){
+      // check for long press
+      if( millis() - lastButtonDown > 3000 ){
+        // Select menu item
+        switch( menuItem ){
+          case 0:
+            setStations( "NBRK", "EMBR" );
+            break;
+          case 1:
+            setStations( "EMBR", "NBRK" );
+            break;
+          case 2: 
+            Serial.println("Erasing wifi config, restarting");
+            wifiManager.resetSettings();
+            ESP.restart();
+            break;
+          case 3:
+            Serial.println("Exiting menu mode");
+            break;
+        }
+        lastButtonDown = 0;
+        drawnMenuItem = -1;
+        return( false );
+      }
+    }
+    else{
+      lastButtonDown = millis();
+    }
+  }
+  else{
+    if( ( lastButtonDown != 0 ) && ( millis() - lastButtonDown > 50 ) ){
+      // short press
+      if( ++menuItem > 3 ) menuItem = 0;
+    }
+    lastButtonDown = 0;
+  }
+  
+  return( true );
+}
+
+/*
+ *  Draw the menu
+ *  highlight = menu item to highlight, 0 = first item
+ */
+void renderMenu( int highlight ){
+  highlight++;
+  
+  display.clear();  
+  display.setColor( WHITE );        
+  display.setFont(ArialMT_Plain_10);
+  int yPos = 0; 
+
+  display.setTextAlignment( TEXT_ALIGN_RIGHT );
+  display.drawString( 128, yPos, "Menu" );
+  yPos += smallLineHeight;
+  
+  display.setTextAlignment( TEXT_ALIGN_LEFT );
+  display.drawString( 0, yPos, "NBRK -> EMBR" );
+  yPos += smallLineHeight;
+  display.drawString( 0, yPos, "EMBR -> NBRK" );
+  yPos += smallLineHeight;
+  display.drawString( 0, yPos, "Reset WIFI" );
+   yPos += smallLineHeight;
+  display.drawString( 0, yPos, "Exit Menu" );
+ 
+  display.setColor( INVERSE );
+  display.fillRect(0, highlight*smallLineHeight, 128, smallLineHeight);
+  display.display();
+}
 
 /*
  *  Switch between inverted and normal screen, ideally to draw attention
@@ -267,7 +404,58 @@ int updateDestination( JsonObject dest, int x, int y, bool large ){
   return( idealSchedule );
 }
 
+/*
+ *  Super kluge - update parameters based on souce and destination station codes
+ *  very hacky for now
+ *  returns true if combination supported, false otherwise
+ */
+bool setStations( String starting, String ending ){
 
+  if( ( starting == "NBRK" ) && ( ending == "EMBR" ) ){
+    startingStation = "NBRK";
+    endingStation = "EMBR";
+    directionNeeded = "South";
+    redLineOption = true;
+    redLinePreferred = true;
+    orangeLineOption = true;
+    orangeLinePreferred = false;
+    yellowLineOption = false;
+    yellowLinePreferred = false;
+    blueLineOption = false;
+    blueLinePreferred = false;
+    greenLineOption = false;
+    greenLinePreferred = false;
+    notEnoughMinutes = 7;
+    tooManyMinutes = 15;
+    return( true );
+  }
+
+  if( ( starting == "EMBR" ) && ( ending == "NBRK" ) ){
+    startingStation = "EMBR";
+    endingStation = "NBRK";
+    directionNeeded = "North";
+    redLineOption = true;
+    redLinePreferred = true;
+    orangeLineOption = true;
+    orangeLinePreferred = true;
+    yellowLineOption = true;
+    yellowLinePreferred = false;
+    blueLineOption = false;
+    blueLinePreferred = false;
+    greenLineOption = false;
+    greenLinePreferred = false;
+    notEnoughMinutes = 7;
+    tooManyMinutes = 25;
+    return( true );
+  }
+
+  return( false );
+}
+
+
+/*
+ *  Unused for now, clumsy way to get station code from name
+ */
 String stationAbbreviation( String name ){
   if( name.equalsIgnoreCase( "12th St. Oakland City Center" ) ) return "12TH";
   if( name.equalsIgnoreCase( "16th St. Mission" ) ) return "16TH";
