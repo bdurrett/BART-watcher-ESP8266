@@ -219,7 +219,12 @@ void renderMenu( int highlight ){
 
   display.setTextAlignment( TEXT_ALIGN_RIGHT );
   display.drawString( 128, yPos, "Menu" );
-  yPos += smallLineHeight;
+  
+  // On dual-color displays, this moves schedule to second color of screen   
+  yPos += smallLineHeight + 4;
+  
+  // Line looks fancy
+  display.drawLine( 0, 12, 128, 12 );
   
   display.setTextAlignment( TEXT_ALIGN_LEFT );
   display.drawString( 0, yPos, "NBRK -> EMBR" );
@@ -231,7 +236,7 @@ void renderMenu( int highlight ){
   display.drawString( 0, yPos, "Exit Menu" );
  
   display.setColor( INVERSE );
-  display.fillRect(0, highlight*smallLineHeight, 128, smallLineHeight);
+  display.fillRect(0, ( highlight*smallLineHeight ) + 5, 128, smallLineHeight);
   display.display();
 }
 
@@ -292,8 +297,9 @@ int refreshStationData() {
 
   // Line looks fancy
   display.drawLine( 0, 12, 128, 12 );
-    
-  yPos += smallLineHeight + 2;
+
+  // On dual-color displays, this moves schedule to second color of screen   
+  yPos += smallLineHeight + 3;
 
   display.setTextAlignment( TEXT_ALIGN_LEFT );
 
