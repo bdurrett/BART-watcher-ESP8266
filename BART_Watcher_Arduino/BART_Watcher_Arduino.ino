@@ -9,9 +9,13 @@
 #include <WiFiClient.h>
 #include "SSD1306Wire.h"              // https://github.com/ThingPulse/esp8266-oled-ssd1306
 
+const char compile_date[] = __DATE__ " " __TIME__;
+
+// Set to true if hardware button connected (with pullup), false otherwise 
+const bool buildHasButton = true;
+
 const int buttonPin = D5;
 
-const char compile_date[] = __DATE__ " " __TIME__;
 
 
 // Currently using the shared legacy API key, https://www.bart.gov/schedules/developers/api
@@ -41,8 +45,8 @@ bool blueLineOption = false;
 bool blueLinePreferred = false;
 bool greenLineOption = false;
 bool greenLinePreferred = false;
-int notEnoughMinutes = 7;
-int tooManyMinutes = 25;
+int notEnoughMinutes = 9;
+int tooManyMinutes = 16;
 
 
 void setup() {
@@ -75,16 +79,23 @@ void setup() {
   // Uncomment to pull new station list for paste into code (usually one-off)
   // parseStationNames();
 
-  pinMode(buttonPin, INPUT);
 
   // Load initial schedule
   refreshStationData();
 
-  if( digitalRead(buttonPin) ){
-    Serial.println("Button is pushed");
+  if( buildHasButton ){
+    Serial.println("Software configured to use hardware button (if not attached, random behavior expected)");
+    pinMode(buttonPin, INPUT);
+
+    if( buttonPushed() ){
+      Serial.println("Button is pushed");
+    }
+    else{
+      Serial.println("Button is not pushed");
+    }
   }
   else{
-    Serial.println("Button is not pushed");
+    Serial.println("Software configured to not use hardware button, menu and sleep functionality not accessible");
   }
 }
 
@@ -110,7 +121,7 @@ void loop() {
   }
 
   // Check for button press
-  if( digitalRead(buttonPin) ){
+  if( buttonPushed() ){
     if( lastButtonDown != 0 ){
       // button is pressed, long enough to enter menu mode?
       if( millis() - lastButtonDown > 3000 ){
@@ -153,7 +164,6 @@ void loop() {
   }
 }
 
-
 bool menuLoop() {
   static int menuItem = 0;
   static int drawnMenuItem = -1;
@@ -164,7 +174,7 @@ bool menuLoop() {
   }
 
   // Check for button press
-  if( digitalRead(buttonPin) ){
+  if( buttonPushed() ){
     if( lastButtonDown != 0 ){
       // check for long press
       if( millis() - lastButtonDown > 3000 ){
@@ -203,6 +213,21 @@ bool menuLoop() {
   }
   
   return( true );
+}
+
+/*
+ *  Get button state
+ *  returns: true if pressed, false if not pressed or no hardware button connected
+ */
+bool buttonPushed(){
+  if( buildHasButton == false ){
+    return( false );
+  }
+  
+  if( digitalRead(buttonPin) == HIGH ){
+    return( true );
+  }
+  return( false );
 }
 
 /*
@@ -432,7 +457,7 @@ bool setStations( String starting, String ending ){
     greenLineOption = false;
     greenLinePreferred = false;
     notEnoughMinutes = 7;
-    tooManyMinutes = 15;
+    tooManyMinutes = 14;
     return( true );
   }
 
@@ -450,8 +475,8 @@ bool setStations( String starting, String ending ){
     blueLinePreferred = false;
     greenLineOption = false;
     greenLinePreferred = false;
-    notEnoughMinutes = 7;
-    tooManyMinutes = 25;
+    notEnoughMinutes = 9;
+    tooManyMinutes = 16;
     return( true );
   }
 
