@@ -14,9 +14,7 @@ const char compile_date[] = __DATE__ " " __TIME__;
 // Set to true if hardware button connected (with pullup), false otherwise 
 const bool buildHasButton = true;
 
-const int buttonPin = D5;
-
-
+const int buttonPin = 14;     // GPIO14, D5 on board
 
 // Currently using the shared legacy API key, https://www.bart.gov/schedules/developers/api
 // this may be revoked at any time, get your own personal key
