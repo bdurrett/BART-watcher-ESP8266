@@ -32,7 +32,7 @@ reset the wifi settings.
 
 ![Menu](https://brett.durrett.net/wp-content/uploads/2022/11/two-color-menu.jpg)
 
-There is a little more contect on my blog, [BART Train Monitor with ESP8266 and SSD1306 display](https://brett.durrett.net/bart-train-monitor-with-esp8266-and-ssd1306-display/)
+There is a little more contect on my blog, [BART Train Monitor with ESP8266 and SSD1306 display](https://brett.durrett.net/bart-train-monitor-with-esp8266-and-ssd1306-display/), and [3D Printed Case for ESP8266 and SSD1306 display](https://brett.durrett.net/3d-printed-case-for-esp8266-and-ssd1306-display/)
 
 ## Required Hardware
 * ESP8266 board, any should work, [the ESP-12F is nice and tiny](https://smile.amazon.com/gp/product/B081PX9YFV/ref=ppx_yo_dt_b_asin_title_o01_s01?ie=UTF8&psc=1)
@@ -70,4 +70,4 @@ button used is 6x6mm, the OLED matches the one linked, above.
 ## To Do
 - [ ] Configuration requires a compile, this should be user configuable, likely via web page
 - [X] Consider adding destination station to the display to reduce errors
-- [ ] 3D Print some form of a case to make it tidy on a desk
+- [X] 3D Print some form of a case to make it tidy on a desk
