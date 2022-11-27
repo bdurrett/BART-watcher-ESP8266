@@ -56,6 +56,12 @@ If you want to use the interactive hardware UI, install a momentary button!
 
 With a button you get access to a menu! 
 
+### Wiring Diagram
+
+![BART watcher wiring diagram](https://brett.durrett.net/wp-content/uploads/2022/11/BART-watcher-breadboard.png)
+
+Wiring diagram created with [Fritzing](https://fritzing.org/)
+
 ### Sorta Fancy (okay, Janky) Case
 I finally got around to tuning up my 3D printer and making a model. The case can be a bit tight... I thought I
 was going to need to glue some things internally, but wiring pretty much compressed everything super snug. The 
