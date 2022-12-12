@@ -14,7 +14,9 @@ const char compile_date[] = __DATE__ " " __TIME__;
 // Set to true if hardware button connected (with pullup), false otherwise 
 const bool buildHasButton = true;
 
-const int buttonPin = 14;     // GPIO14, D5 on board
+const int buttonPin = 14;             // GPIO14, D5 on board
+
+const int screenSaverMinutes = 60;    // automatically turn on screen saver
 
 // Currently using the shared legacy API key, https://www.bart.gov/schedules/developers/api
 // this may be revoked at any time, get your own personal key
@@ -119,10 +121,28 @@ void configModeCallback (WiFiManager *myWiFiManager) {
 
 unsigned long lastButtonDown = 0;
 unsigned long lastScheduleUpdate = 0;
+unsigned long screenOnSince = 0;
 
 void loop() {
   static bool isActive = true;
   static bool inMenu = false;
+
+  if( isActive == true ){
+    if( screenOnSince == 0 ){
+      // first run or reset
+      screenOnSince = millis();
+    }
+    else{
+      // see if screen saver triggered
+      if( ( millis() - screenOnSince ) / 60000 >= screenSaverMinutes ) {
+        Serial.println("Automatically entering screen saver mode");  
+        display.displayOff();
+        isActive = false;
+        inMenu = false;
+        screenOnSince = 0;
+      }
+    }
+  }
 
   if( inMenu == true ){
     if( inMenu = menuLoop() ){
