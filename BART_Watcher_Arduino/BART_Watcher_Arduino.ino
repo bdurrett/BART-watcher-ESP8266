@@ -24,11 +24,11 @@ String bartApiKey = "MW9S-E7SL-26DU-VV8V";
 int smallLineHeight = 11;
 int bigLineHeight = 16;
 
+// Global wifi manager instance
+WiFiManager wifiManager;
+
 // Global display instance 
 SSD1306Wire display(0x3c, SDA, SCL);  // ADDRESS, SDA, SCL
-
-// Global Wifi Manager instance
-WiFiManager wifiManager;
 
 String startingStation = "EMBR";
 String endingStation = "NBRK";
@@ -55,7 +55,23 @@ void setup() {
   Serial.println(compile_date);
   Serial.println("entering setup()");
 
+  // Init display
+  Serial.println("Initializing SSD1306");  
+  display.init();
+  display.normalDisplay();
+  display.flipScreenVertically();
+  display.displayOn();
+
+  // Title Screen
+  display.clear();  
+  display.setColor( WHITE );        
+  display.setFont(ArialMT_Plain_16);
+  display.setTextAlignment( TEXT_ALIGN_CENTER );
+  display.drawString( 64, 0, "BART Watcher" );
+  display.display();
+
   Serial.println("starting Wifi manager");
+  wifiManager.setAPCallback(configModeCallback);
   String mac = WiFi.macAddress();
   mac.replace( ":", "" );
   Serial.print("Got MAC address: " );
@@ -63,16 +79,6 @@ void setup() {
   Serial.print("Got IP address: " );
   Serial.println(WiFi.localIP());         // Send the IP address of the ESP8266 to the computer
   wifiManager.autoConnect();
-
-  // wifiManager.setAPCallback(configodeCallback);
-  // wifiManager.setSaveConfigCallback(saveConfigCallback);
-
-  Serial.println("Initializing SSD1306");
-  
-  display.init();
-  display.normalDisplay();
-  display.flipScreenVertically();
-  display.displayOn();
 
   // Uncomment to pull new station list for paste into code (usually one-off)
   // parseStationNames();
@@ -95,6 +101,20 @@ void setup() {
   else{
     Serial.println("Software configured to not use hardware button, menu and sleep functionality not accessible");
   }
+}
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  Serial.println("Wifi entered config mode");
+  Serial.println(WiFi.softAPIP());
+  Serial.println(myWiFiManager->getConfigPortalSSID());
+  display.setColor( WHITE );        
+  display.setFont(ArialMT_Plain_10);
+  display.setTextAlignment( TEXT_ALIGN_CENTER );
+  display.drawString( 64, 18, "Setup via wifi" );
+  display.drawString( 64, 28, "AP: " + myWiFiManager->getConfigPortalSSID() );
+  display.drawString( 64, 38, "IP: " + WiFi.softAPIP().toString() );
+  display.display();
+
 }
 
 unsigned long lastButtonDown = 0;
