@@ -6,6 +6,7 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <Arduino.h>
 #include <WiFiClient.h>
 #include "SSD1306Wire.h"              // https://github.com/ThingPulse/esp8266-oled-ssd1306
 
@@ -324,8 +325,9 @@ void blinkScreen( int blinks, int msecBetween ) {
  *  departure time 
  */
 int refreshStationData() {
-  String url = String( "http://api.bart.gov/api/etd.aspx?cmd=etd&orig=" + startingStation + "&key="  + bartApiKey + "&json=y" );
-  String bartresponse = httpGETRequest( url.c_str() );
+  String url = String( "https://api.bart.gov/api/etd.aspx?cmd=etd&orig=" + startingStation + "&key="  + bartApiKey + "&json=y" );
+  String bartresponse = httpsGETRequest( url.c_str() );
+
   // Serial.println(bartresponse);
   
   DynamicJsonDocument doc(20000);
@@ -584,8 +586,8 @@ String stationAbbreviation( String name ){
  * Helper routine to pull names but easier to just store locally
  */
 void parseStationNames(){
-  String url = String( "http://api.bart.gov/api/stn.aspx?cmd=stns&key=" + bartApiKey + "&json=y" );
-  String bartresponse = httpGETRequest( url.c_str() );
+  String url = String( "https://api.bart.gov/api/stn.aspx?cmd=stns&key=" + bartApiKey + "&json=y" );
+  String bartresponse = httpsGETRequest( url.c_str() );
 
   DynamicJsonDocument doc(20000);
   deserializeJson(doc, bartresponse);
@@ -607,32 +609,40 @@ void parseStationNames(){
   }
 }
 
-String httpGETRequest(const char* serverName) {
-  WiFiClient client;
-  HTTPClient http;
+String httpsGETRequest(const char* serverName) {
+  std::unique_ptr<BearSSL::WiFiClientSecure>client(new BearSSL::WiFiClientSecure);
 
-  Serial.print("GET-ing web page: ");
-  Serial.println(serverName);
+  // client->setFingerprint(fingerprint);
+  // Or, if you happy to ignore the SSL certificate, then use the following line instead:
+  client->setInsecure();
 
-  // Your IP address with path or Domain name with URL path 
-  http.begin(client, serverName);
-
-  // Send HTTP POST request
-  int httpResponseCode = http.GET();
-
+  HTTPClient https;
   String payload = "{}"; 
 
-  if (httpResponseCode>0) {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    payload = http.getString();
-  }
-  else {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  // Free resources
-  http.end();
+  Serial.print("[HTTPS] begin...\n");
+  if (https.begin(*client, serverName)) {  // HTTPS
 
-  return payload;
+    Serial.print("[HTTPS] GET...\n");
+    // start connection and send HTTP header
+    int httpCode = https.GET();
+
+    // httpCode will be negative on error
+    if (httpCode > 0) {
+      // HTTP header has been send and Server response header has been handled
+      Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
+
+      // file found at server
+      if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
+        payload = https.getString();
+        Serial.println(payload);
+      }
+    } else {
+      Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
+    }
+
+    https.end();
+  } else {
+    Serial.printf("[HTTPS] Unable to connect\n");
+  }
+  return( payload );
 }
